@@ -7,8 +7,10 @@
  * owner. Run via `npm run mcp`.
  */
 import { config as loadEnv } from "dotenv";
-loadEnv({ path: ".env" });
-loadEnv({ path: ".env.local", override: true });
+// quiet: dotenv prints "tip" lines to stdout by default; for an MCP stdio
+// server that pollutes the JSON-RPC stream and breaks clients.
+loadEnv({ path: ".env", quiet: true });
+loadEnv({ path: ".env.local", override: true, quiet: true });
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";

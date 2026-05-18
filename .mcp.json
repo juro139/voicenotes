@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "voicenotes": {
+      "command": "ssh",
+      "args": [
+        "-i",
+        "C:\\Users\\Juraj\\.ssh\\voicenotes_ed25519",
+        "-o",
+        "StrictHostKeyChecking=no",
+        "juraj@192.168.0.121",
+        "/home/juraj/voicenotes-ops/mcp-stdio.sh"
+      ]
+    },
+    "voicenotes-local": {
+      "command": "npm",
+      "args": ["run", "mcp"]
+    }
+  }
+}
