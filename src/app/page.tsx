@@ -3,14 +3,22 @@ import { Mic } from "lucide-react";
 import { requireSession } from "@/lib/server-auth";
 import { Topbar } from "@/components/topbar";
 import { Button } from "@/components/ui/button";
+import { NoteList } from "@/components/note-list";
+import { listNotesVisibleTo } from "@/lib/notes";
+
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const session = await requireSession();
+  const notes = await listNotesVisibleTo(
+    session.user.id,
+    session.user.role === "admin",
+  );
 
   return (
     <>
       <Topbar user={session.user} />
-      <main className="mx-auto max-w-5xl flex-1 w-full px-4 py-6">
+      <main className="mx-auto max-w-3xl flex-1 w-full px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold tracking-tight">
             Your voice notes
@@ -22,17 +30,7 @@ export default async function Home() {
             </Link>
           </Button>
         </div>
-
-        <div className="rounded-lg border border-dashed p-10 text-center">
-          <Mic className="size-10 mx-auto text-muted-foreground mb-3" />
-          <p className="text-muted-foreground">
-            No notes yet. Tap{" "}
-            <Link href="/record" className="underline">
-              Record
-            </Link>{" "}
-            to capture your first note.
-          </p>
-        </div>
+        <NoteList notes={notes} />
       </main>
     </>
   );
