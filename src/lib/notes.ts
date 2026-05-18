@@ -17,7 +17,7 @@ export type NoteListItem = {
   mine: boolean;
 };
 
-export type NoteFull = NoteListItem & {
+export type NoteFull = Omit<NoteListItem, "rawTextPreview"> & {
   audioPath: string;
   rawText: string | null;
 };
