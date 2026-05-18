@@ -9,6 +9,7 @@ export type NoteListItem = {
   durationSeconds: number;
   language: string;
   summary: string | null;
+  rawTextPreview: string | null;
   category: string | null;
   tags: string[];
   shared: boolean;
@@ -41,6 +42,7 @@ export async function listNotesVisibleTo(
       durationSeconds: schema.voicenote.durationSeconds,
       language: schema.voicenote.language,
       summary: schema.voicenote.summary,
+      rawText: schema.voicenote.rawText,
       category: schema.voicenote.category,
       tags: schema.voicenote.tags,
       shared: schema.voicenote.shared,
@@ -52,7 +54,11 @@ export async function listNotesVisibleTo(
     .orderBy(desc(schema.voicenote.createdAt))
     .all();
 
-  return rows.map((r) => ({ ...r, mine: r.userId === userId }));
+  return rows.map(({ rawText, ...r }) => ({
+    ...r,
+    mine: r.userId === userId,
+    rawTextPreview: rawText ? rawText.slice(0, 240) : null,
+  }));
 }
 
 export async function getNoteForViewer(

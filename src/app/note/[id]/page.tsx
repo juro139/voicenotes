@@ -50,7 +50,11 @@ export default async function NotePage({
         <div className="mb-6 rounded-2xl border bg-gradient-to-br from-card to-card/40 p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3 mb-3">
             <h1 className="text-2xl font-semibold tracking-tight">
-              {note.summary ?? "Untitled recording"}
+              {note.summary ??
+                (note.rawText
+                  ? note.rawText.split(/[.!?\n]/)[0].slice(0, 80) ||
+                    "Untitled recording"
+                  : "Untitled recording")}
             </h1>
             <StatusPill status={note.status} />
           </div>
