@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth-client";
-import { buttonVariants } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,9 +11,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { Mic, UserCircle2, LogOut, Users } from "lucide-react";
+import {
+  Mic,
+  UserCircle2,
+  LogOut,
+  Users,
+  ArrowUpRight,
+} from "lucide-react";
 import { PWARegister } from "@/components/pwa-register";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type TopbarUser = {
   name: string;
@@ -33,52 +38,64 @@ export function Topbar({ user }: { user: TopbarUser }) {
   }
 
   return (
-    <header className="border-b sticky top-0 bg-background/80 backdrop-blur z-10">
-      <div className="mx-auto max-w-5xl flex items-center justify-between px-4 py-3">
+    <header
+      className="sticky top-0 z-50 border-b border-brand-line"
+      style={{
+        backdropFilter: "blur(12px) saturate(1.4)",
+        WebkitBackdropFilter: "blur(12px) saturate(1.4)",
+        background: "color-mix(in oklab, var(--brand-bg) 80%, transparent)",
+      }}
+    >
+      <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-3.5">
         <Link
           href="/"
-          className="flex items-center gap-2 font-semibold text-lg tracking-tight"
+          className="brand-mark-trigger flex items-center gap-2.5 text-[15px] font-medium tracking-tight"
         >
-          <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-500">
-            <Mic className="size-4" />
+          <span className="brand-mark">
+            <Mic className="size-3.5" />
           </span>
           voicenotes
         </Link>
-        <div className="flex items-center gap-2">
+
+        <span className="status-pill hidden sm:flex">
+          <span className="dot" aria-hidden />
+          Live
+        </span>
+
+        <div className="ml-auto flex items-center gap-2">
           <PWARegister />
-          <Link
-            href="/record"
-            className={buttonVariants({ size: "sm" })}
-          >
-            <Mic className="size-3.5" />
+          <ThemeToggle />
+          <Link href="/record" className="btn btn-primary btn-sm">
+            <Mic className="btn-icon size-3.5" />
             Record
           </Link>
           <DropdownMenu>
-            <DropdownMenuTrigger
-              className={buttonVariants({ variant: "ghost", size: "icon" })}
-              aria-label="Account"
-            >
-              <UserCircle2 className="size-5" />
+            <DropdownMenuTrigger className="icon-btn" aria-label="Account">
+              <UserCircle2 className="size-4" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-56">
+            <DropdownMenuContent
+              align="end"
+              className="min-w-56 border-brand-line-strong bg-card"
+            >
               <DropdownMenuLabel>
                 <div className="flex flex-col gap-1">
-                  <span className="font-medium">{user.name}</span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-sm font-medium text-brand-fg">
+                    {user.name}
+                  </span>
+                  <span className="text-xs text-brand-fg-muted">
                     {user.email}
                   </span>
                   {isAdmin && (
-                    <Badge variant="secondary" className="w-fit mt-1">
-                      admin
-                    </Badge>
+                    <span className="tag tag-filled w-fit mt-1">admin</span>
                   )}
                 </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator />
+              <DropdownMenuSeparator className="bg-brand-line" />
               {isAdmin && (
                 <DropdownMenuItem render={<Link href="/admin" />}>
                   <Users className="size-4" />
                   Users
+                  <ArrowUpRight className="ml-auto size-3.5 opacity-60" />
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={onSignOut}>

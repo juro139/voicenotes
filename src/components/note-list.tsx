@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { Clock, Share2, Tag, User as UserIcon, Mic } from "lucide-react";
+import { ArrowUpRight, Mic, Share2, Tag, User as UserIcon } from "lucide-react";
 import type { NoteListItem } from "@/lib/notes";
-import { Badge } from "@/components/ui/badge";
-import { StatusPill } from "@/components/status-pill";
 
 function formatDuration(s: number): string {
   const total = Math.floor(s);
@@ -14,119 +12,124 @@ function formatDuration(s: number): string {
 function formatRelative(d: Date): string {
   const diffMs = Date.now() - d.getTime();
   const diffMin = Math.floor(diffMs / 60_000);
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffMin < 1) return "teraz";
+  if (diffMin < 60) return `${diffMin}m`;
   const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `${diffH}h ago`;
+  if (diffH < 24) return `${diffH}h`;
   const diffD = Math.floor(diffH / 24);
-  if (diffD < 7) return `${diffD}d ago`;
-  return d.toLocaleDateString();
+  if (diffD < 7) return `${diffD}d`;
+  return d.toLocaleDateString("sk-SK", { day: "numeric", month: "short" });
 }
 
-const ACCENT: Record<NoteListItem["status"], string> = {
-  pending: "before:bg-amber-500",
-  transcribed: "before:bg-sky-500",
-  categorized: "before:bg-emerald-500",
+const STATUS_LABEL: Record<NoteListItem["status"], string> = {
+  pending: "Prepisujem",
+  transcribed: "Prepísané",
+  categorized: "Hotové",
 };
+
+function deriveTitle(note: NoteListItem): string {
+  if (note.summary) return note.summary;
+  if (note.rawTextPreview) {
+    const firstSentence = note.rawTextPreview.split(/[.!?\n]/)[0].trim();
+    if (firstSentence.length > 0) return firstSentence;
+  }
+  return note.status === "pending" ? "Nová nahrávka" : "Bez názvu";
+}
 
 export function NoteList({ notes }: { notes: NoteListItem[] }) {
   if (notes.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed p-12 text-center">
-        <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-muted">
-          <Mic className="size-7 text-muted-foreground" />
+      <div className="soft-card flex flex-col items-center gap-4 py-14 text-center">
+        <span className="flex size-14 items-center justify-center rounded-full bg-brand-accent-soft text-brand-accent">
+          <Mic className="size-6" />
+        </span>
+        <div className="flex flex-col gap-1">
+          <p className="text-base font-medium">Zatiaľ <span className="italic-accent">nič</span></p>
+          <p className="text-sm text-brand-fg-muted">
+            Klikni na{" "}
+            <Link
+              href="/record"
+              className="underline decoration-dotted underline-offset-4"
+            >
+              Record
+            </Link>{" "}
+            a nahraj prvú poznámku.
+          </p>
         </div>
-        <p className="font-medium mb-1">No voice notes yet</p>
-        <p className="text-sm text-muted-foreground">
-          Tap{" "}
-          <Link href="/record" className="underline decoration-dotted">
-            Record
-          </Link>{" "}
-          to capture your first note.
-        </p>
       </div>
     );
   }
 
   return (
-    <ul className="flex flex-col gap-3">
-      {notes.map((note) => (
-        <li key={note.id}>
-          <Link
-            href={`/note/${note.id}`}
-            className={`group relative block overflow-hidden rounded-2xl border bg-card p-5 transition-all hover:border-foreground/20 hover:bg-card/60 hover:shadow-md before:absolute before:left-0 before:top-0 before:h-full before:w-1 ${ACCENT[note.status]}`}
-          >
-            <div className="flex items-start justify-between gap-3 mb-2">
-              <h3 className="font-medium leading-snug line-clamp-2 flex-1">
-                {note.summary ??
-                  (note.status === "pending"
-                    ? "New recording"
-                    : note.rawTextPreview
-                      ? note.rawTextPreview.split(/[.!?\n]/)[0]
-                      : "Untitled recording")}
-              </h3>
-              <StatusPill status={note.status} />
-            </div>
-
-            {!note.summary && note.rawTextPreview && (
-              <p className="mb-2 text-sm text-muted-foreground line-clamp-2">
-                {note.rawTextPreview}
-              </p>
-            )}
-
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Clock className="size-3" />
-                {formatRelative(note.createdAt)}
-              </span>
-              <span aria-hidden>·</span>
-              <span>{formatDuration(note.durationSeconds)}</span>
-              {!note.mine && (
-                <>
-                  <span aria-hidden>·</span>
-                  <span className="flex items-center gap-1">
-                    <UserIcon className="size-3" />
-                    {note.userName}
-                  </span>
-                </>
-              )}
-              {note.shared && note.mine && (
-                <>
-                  <span aria-hidden>·</span>
-                  <span className="flex items-center gap-1 text-emerald-500">
-                    <Share2 className="size-3" />
-                    shared
-                  </span>
-                </>
-              )}
-            </div>
-
-            {(note.category || note.tags.length > 0) && (
-              <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                {note.category && (
-                  <Badge variant="outline" className="text-xs">
-                    {note.category}
-                  </Badge>
-                )}
-                {note.tags.length > 0 && (
-                  <>
-                    <Tag className="size-3 text-muted-foreground" />
-                    {note.tags.map((t) => (
-                      <Badge
-                        key={t}
-                        variant="secondary"
-                        className="text-xs"
-                      >
-                        {t}
-                      </Badge>
-                    ))}
-                  </>
-                )}
+    <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {notes.map((note, idx) => {
+        const title = deriveTitle(note);
+        const number = (idx + 1).toString().padStart(2, "0");
+        return (
+          <li key={note.id}>
+            <Link href={`/note/${note.id}`} className="ed-card h-full">
+              <div className="flex items-center justify-between text-xs">
+                <span
+                  className="font-mono opacity-60"
+                  style={{ letterSpacing: "0.1em" }}
+                >
+                  {number} · {formatRelative(note.createdAt)} ·{" "}
+                  {formatDuration(note.durationSeconds)}
+                </span>
+                <span
+                  className="font-mono uppercase opacity-60"
+                  style={{ letterSpacing: "0.1em", fontSize: "10px" }}
+                >
+                  {STATUS_LABEL[note.status]}
+                </span>
               </div>
-            )}
-          </Link>
-        </li>
-      ))}
+
+              <h3
+                className="font-medium leading-[1.1] line-clamp-2"
+                style={{ fontSize: "22px", letterSpacing: "-0.015em" }}
+              >
+                {title}
+              </h3>
+
+              {note.rawTextPreview && !note.summary && (
+                <p
+                  className="text-sm leading-snug opacity-75 line-clamp-3"
+                  style={{ maxWidth: "36ch" }}
+                >
+                  {note.rawTextPreview}
+                </p>
+              )}
+
+              <div className="mt-auto flex items-end justify-between gap-3 pt-2">
+                <div className="flex flex-wrap items-center gap-2 text-xs opacity-75">
+                  {!note.mine && (
+                    <span className="flex items-center gap-1">
+                      <UserIcon className="size-3" />
+                      {note.userName}
+                    </span>
+                  )}
+                  {note.shared && note.mine && (
+                    <span className="flex items-center gap-1">
+                      <Share2 className="size-3" />
+                      zdieľané
+                    </span>
+                  )}
+                  {note.category && (
+                    <span className="flex items-center gap-1">
+                      <Tag className="size-3" />
+                      {note.category}
+                    </span>
+                  )}
+                </div>
+
+                <span className="ed-card-arrow" aria-hidden>
+                  <ArrowUpRight className="size-4" />
+                </span>
+              </div>
+            </Link>
+          </li>
+        );
+      })}
     </ul>
   );
 }

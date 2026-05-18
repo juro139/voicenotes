@@ -4,12 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Trash2, Save, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import type { NoteFull } from "@/lib/notes";
 
 export function NoteEditor({
@@ -46,27 +44,27 @@ export function NoteEditor({
           shared,
         }),
       });
-      if (!res.ok) throw new Error(`Save failed (${res.status})`);
-      toast.success("Saved");
+      if (!res.ok) throw new Error(`Uloženie zlyhalo (${res.status})`);
+      toast.success("Uložené");
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Save failed");
+      toast.error(err instanceof Error ? err.message : "Uloženie zlyhalo");
     } finally {
       setSaving(false);
     }
   }
 
   async function onDelete() {
-    if (!confirm("Delete this note? This cannot be undone.")) return;
+    if (!confirm("Zmazať túto poznámku? Nedá sa vrátiť.")) return;
     setDeleting(true);
     try {
       const res = await fetch(`/api/notes/${note.id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error(`Delete failed (${res.status})`);
-      toast.success("Deleted");
+      if (!res.ok) throw new Error(`Zmazanie zlyhalo (${res.status})`);
+      toast.success("Zmazané");
       router.push("/");
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Delete failed");
+      toast.error(err instanceof Error ? err.message : "Zmazanie zlyhalo");
       setDeleting(false);
     }
   }
@@ -74,138 +72,161 @@ export function NoteEditor({
   if (!editable) {
     return (
       <div className="flex flex-col gap-5">
-        <ReadonlyField label="Summary" value={note.summary ?? "—"} />
-        <ReadonlyField
-          label="Transcript"
-          value={note.rawText ?? "(transcribing in background…)"}
-          multiline
-        />
-        <ReadonlyField label="Category" value={note.category ?? "—"} />
-        <div>
-          <Label className="mb-2 block">Tags</Label>
-          <div className="flex flex-wrap gap-1">
-            {note.tags.length === 0 ? (
-              <span className="text-sm text-muted-foreground">—</span>
-            ) : (
-              note.tags.map((t) => (
-                <Badge key={t} variant="secondary">
+        <Section eyebrow="Súhrn">
+          <p className="whitespace-pre-wrap text-base">
+            {note.summary ?? "—"}
+          </p>
+        </Section>
+        <Section eyebrow="Prepis">
+          <p className="whitespace-pre-wrap text-base leading-relaxed">
+            {note.rawText ?? "(prepisujem na pozadí…)"}
+          </p>
+        </Section>
+        {note.category && (
+          <Section eyebrow="Kategória">
+            <span className="tag">{note.category}</span>
+          </Section>
+        )}
+        {note.tags.length > 0 && (
+          <Section eyebrow="Tagy">
+            <div className="flex flex-wrap gap-2">
+              {note.tags.map((t) => (
+                <span key={t} className="tag">
                   {t}
-                </Badge>
-              ))
-            )}
-          </div>
-        </div>
+                </span>
+              ))}
+            </div>
+          </Section>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="summary">Summary</Label>
+    <div className="flex flex-col gap-6">
+      <Field eyebrow="Súhrn" label="Krátky názov alebo zhrnutie">
         <Input
           id="summary"
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
-          placeholder="Short title or summary"
+          placeholder="napr. Nákupný zoznam"
+          className="bg-card border-brand-line-strong text-base h-11"
         />
-      </div>
+      </Field>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="rawText">Transcript</Label>
+      <Field eyebrow="Prepis" label="Doslovný prepis nahrávky">
         <Textarea
           id="rawText"
           value={rawText}
           onChange={(e) => setRawText(e.target.value)}
           placeholder={
             note.status === "pending"
-              ? "Transcribing in background — will appear here…"
-              : "Transcript"
+              ? "Prepisujem na pozadí — text sa tu objaví automaticky…"
+              : "Prepis"
           }
           rows={8}
+          className="bg-card border-brand-line-strong text-base leading-relaxed"
         />
-      </div>
+      </Field>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="category">Category</Label>
+      <Field eyebrow="Kategória" label="Voľný textový štítok">
         <Input
           id="category"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          placeholder="e.g. ideas, todo, family"
+          placeholder="napr. nápady, rodina, todo"
+          className="bg-card border-brand-line-strong text-base h-11"
         />
-      </div>
+      </Field>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="tags">Tags (comma-separated)</Label>
+      <Field eyebrow="Tagy" label="Oddelené čiarkou">
         <Input
           id="tags"
           value={tagsInput}
           onChange={(e) => setTagsInput(e.target.value)}
           placeholder="tag1, tag2"
+          className="bg-card border-brand-line-strong text-base h-11"
         />
-      </div>
+      </Field>
 
-      <div className="flex items-center justify-between rounded-lg border p-3">
-        <div>
+      <div className="soft-card flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
           <Label htmlFor="shared" className="text-sm font-medium">
-            Share with family
+            Zdieľať s rodinou
           </Label>
-          <p className="text-xs text-muted-foreground">
-            Other family members can read this note.
+          <p className="text-xs text-brand-fg-muted">
+            Ostatní členovia uvidia túto poznámku.
           </p>
         </div>
         <Switch id="shared" checked={shared} onCheckedChange={setShared} />
       </div>
 
-      <div className="flex items-center gap-2 pt-2">
-        <Button onClick={onSave} disabled={saving || deleting}>
+      <div className="flex flex-wrap items-center gap-3 pt-2">
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={saving || deleting}
+          className="btn btn-primary"
+        >
           {saving ? (
-            <>
-              <Loader2 className="size-4 animate-spin" />
-              Saving…
-            </>
+            <Loader2 className="btn-icon size-4 animate-spin" />
           ) : (
-            <>
-              <Save className="size-4" />
-              Save
-            </>
+            <Save className="btn-icon size-4" />
           )}
-        </Button>
-        <Button
-          variant="destructive"
+          {saving ? "Ukladám…" : "Uložiť"}
+        </button>
+        <button
+          type="button"
           onClick={onDelete}
           disabled={saving || deleting}
+          className="btn btn-ghost"
+          style={{ color: "var(--brand-warn)" }}
         >
           {deleting ? (
-            <Loader2 className="size-4 animate-spin" />
+            <Loader2 className="btn-icon size-4 animate-spin" />
           ) : (
-            <Trash2 className="size-4" />
+            <Trash2 className="btn-icon size-4" />
           )}
-          Delete
-        </Button>
+          <span className="btn-underline">Zmazať</span>
+        </button>
       </div>
     </div>
   );
 }
 
-function ReadonlyField({
+function Field({
+  eyebrow,
   label,
-  value,
-  multiline,
+  children,
 }: {
-  label: string;
-  value: string;
-  multiline?: boolean;
+  eyebrow: string;
+  label?: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div>
-      <Label className="mb-1 block">{label}</Label>
-      <p
-        className={`text-sm ${multiline ? "whitespace-pre-wrap" : ""} rounded-md border bg-muted/30 p-3`}
-      >
-        {value}
-      </p>
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-0.5">
+        <span className="eyebrow-bare">{eyebrow}</span>
+        {label && (
+          <span className="text-xs text-brand-fg-subtle">{label}</span>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Section({
+  eyebrow,
+  children,
+}: {
+  eyebrow: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="eyebrow-bare">{eyebrow}</span>
+      <div className="soft-card">{children}</div>
     </div>
   );
 }

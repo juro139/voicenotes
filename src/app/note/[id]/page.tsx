@@ -4,9 +4,7 @@ import { ArrowLeft, Clock, Loader2, Share2 } from "lucide-react";
 import { requireSession } from "@/lib/server-auth";
 import { getNoteForViewer, canEditNote } from "@/lib/notes";
 import { Topbar } from "@/components/topbar";
-import { buttonVariants } from "@/components/ui/button";
 import { AutoRefresh } from "@/components/auto-refresh";
-import { StatusPill } from "@/components/status-pill";
 import { NoteEditor } from "./note-editor";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +15,12 @@ function formatDuration(s: number): string {
   const r = total % 60;
   return `${m}:${r.toString().padStart(2, "0")}`;
 }
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: "Prepisujem",
+  transcribed: "Prepísané",
+  categorized: "Hotové",
+};
 
 export default async function NotePage({
   params,
@@ -32,59 +36,74 @@ export default async function NotePage({
   const editable = canEditNote(note, session.user.id, isAdmin);
   const isPending = note.status === "pending";
 
+  const title =
+    note.summary ??
+    (note.rawText
+      ? note.rawText.split(/[.!?\n]/)[0].slice(0, 100) || "Bez názvu"
+      : "Bez názvu");
+
   return (
     <>
       <Topbar user={session.user} />
       <AutoRefresh enabled={isPending} intervalMs={3000} />
-      <main className="mx-auto max-w-3xl flex-1 w-full px-4 py-6">
-        <div className="mb-4">
-          <Link
-            href="/"
-            className={buttonVariants({ variant: "ghost", size: "sm" })}
-          >
-            <ArrowLeft className="size-3.5" />
-            All notes
-          </Link>
-        </div>
+      <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8 md:py-10">
+        <Link
+          href="/"
+          className="btn btn-ghost mb-6 -ml-1 inline-flex"
+          style={{ fontSize: "13px" }}
+        >
+          <ArrowLeft className="btn-icon size-3.5" />
+          <span className="btn-underline">Všetky poznámky</span>
+        </Link>
 
-        <div className="mb-6 rounded-2xl border bg-gradient-to-br from-card to-card/40 p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {note.summary ??
-                (note.rawText
-                  ? note.rawText.split(/[.!?\n]/)[0].slice(0, 80) ||
-                    "Untitled recording"
-                  : "Untitled recording")}
+        <section className="section-head !mb-8">
+          <div className="flex flex-col gap-2">
+            <span className="eyebrow">Záznam</span>
+            <span className="eyebrow-bare">
+              {STATUS_LABEL[note.status] ?? note.status}
+            </span>
+          </div>
+          <div className="flex flex-col gap-3">
+            <h1
+              className="font-medium leading-[1.05]"
+              style={{
+                fontSize: "clamp(32px, 5vw, 56px)",
+                letterSpacing: "-0.03em",
+              }}
+            >
+              {title}
             </h1>
-            <StatusPill status={note.status} />
+            <div className="flex flex-wrap items-center gap-3 text-sm text-brand-fg-muted">
+              <span>{note.userName}</span>
+              <span aria-hidden>·</span>
+              <span>
+                {note.createdAt.toLocaleString("sk-SK", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}
+              </span>
+              <span aria-hidden>·</span>
+              <span className="flex items-center gap-1">
+                <Clock className="size-3.5" />
+                {formatDuration(note.durationSeconds)}
+              </span>
+              {note.shared && (
+                <>
+                  <span aria-hidden>·</span>
+                  <span
+                    className="flex items-center gap-1"
+                    style={{ color: "var(--brand-accent)" }}
+                  >
+                    <Share2 className="size-3.5" />
+                    zdieľané
+                  </span>
+                </>
+              )}
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-            <span>{note.userName}</span>
-            <span aria-hidden>·</span>
-            <span>
-              {note.createdAt.toLocaleString("sk-SK", {
-                dateStyle: "medium",
-                timeStyle: "short",
-              })}
-            </span>
-            <span aria-hidden>·</span>
-            <span className="flex items-center gap-1">
-              <Clock className="size-3.5" />
-              {formatDuration(note.durationSeconds)}
-            </span>
-            {note.shared && (
-              <>
-                <span aria-hidden>·</span>
-                <span className="flex items-center gap-1 text-emerald-500">
-                  <Share2 className="size-3.5" />
-                  shared
-                </span>
-              </>
-            )}
-          </div>
-        </div>
+        </section>
 
-        <div className="rounded-2xl border bg-muted/30 p-4 mb-6">
+        <div className="soft-card mb-8 p-4">
           <audio
             controls
             preload="metadata"
@@ -94,12 +113,26 @@ export default async function NotePage({
         </div>
 
         {isPending && (
-          <div className="mb-6 flex items-center gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 dark:text-amber-200">
-            <Loader2 className="size-4 animate-spin" />
-            <div>
-              <p className="font-medium">Transcribing in background…</p>
-              <p className="text-xs opacity-80">
-                This page will refresh automatically once it's done.
+          <div
+            className="soft-card mb-8 flex items-center gap-3"
+            style={{
+              borderColor: "var(--brand-warn)",
+              background: "color-mix(in oklab, var(--brand-warn) 12%, transparent)",
+            }}
+          >
+            <Loader2
+              className="size-4 animate-spin"
+              style={{ color: "var(--brand-warn)" }}
+            />
+            <div className="flex flex-col">
+              <p
+                className="text-sm font-medium"
+                style={{ color: "var(--brand-warn)" }}
+              >
+                Prepisujem na pozadí…
+              </p>
+              <p className="text-xs text-brand-fg-muted">
+                Stránka sa sama obnoví, len čo Whisper skončí.
               </p>
             </div>
           </div>

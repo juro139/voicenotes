@@ -7,7 +7,7 @@ import { Mic, Square, Loader2 } from "lucide-react";
 
 type State = "idle" | "requesting" | "recording" | "uploading";
 
-const NUM_BARS = 9;
+const NUM_BARS = 11;
 
 const MIME_CANDIDATES = [
   "audio/webm;codecs=opus",
@@ -37,6 +37,13 @@ function formatTime(seconds: number): string {
   const s = total % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
+
+const STATE_LABEL: Record<State, string> = {
+  idle: "Pripravené",
+  requesting: "Žiadam o mikrofón",
+  recording: "Nahrávam",
+  uploading: "Ukladám",
+};
 
 export function Recorder() {
   const router = useRouter();
@@ -85,14 +92,14 @@ export function Recorder() {
       });
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(text || `Upload failed (${res.status})`);
+        throw new Error(text || `Upload zlyhal (${res.status})`);
       }
       const data = (await res.json()) as { id: string };
-      toast.success("Recording saved");
+      toast.success("Uložené");
       router.push(`/note/${data.id}`);
       router.refresh();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Upload failed";
+      const message = err instanceof Error ? err.message : "Upload zlyhal";
       toast.error(message);
       setState("idle");
     }
@@ -161,7 +168,7 @@ export function Recorder() {
       setState("recording");
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Microphone access denied";
+        err instanceof Error ? err.message : "Mikrofón odmietnutý";
       toast.error(message);
       setState("idle");
       cleanup();
@@ -177,25 +184,29 @@ export function Recorder() {
   const isRecording = state === "recording";
   const isBusy = state === "requesting" || state === "uploading";
 
-  const buttonColor = isRecording
-    ? "bg-red-500 hover:bg-red-600 shadow-red-500/30"
-    : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30";
-
   return (
     <div className="flex flex-col items-center gap-10 py-12">
-      <div className="flex flex-col items-center gap-1">
-        <div className="text-6xl sm:text-7xl font-mono tabular-nums tracking-tight">
-          {formatTime(duration)}
-        </div>
+      <div className="flex flex-col items-center gap-2">
+        <span className="status-pill">
+          {isRecording ? (
+            <span
+              className="dot"
+              aria-hidden
+              style={{ background: "var(--brand-warn)" }}
+            />
+          ) : (
+            <span className="dot" aria-hidden />
+          )}
+          {STATE_LABEL[state]}
+        </span>
         <div
-          className={`text-xs font-medium uppercase tracking-widest ${
-            isRecording ? "text-red-500" : "text-muted-foreground"
-          }`}
+          className="font-mono tabular-nums leading-none"
+          style={{
+            fontSize: "clamp(72px, 14vw, 128px)",
+            letterSpacing: "-0.04em",
+          }}
         >
-          {state === "idle" && "ready"}
-          {state === "requesting" && "asking for microphone"}
-          {state === "recording" && "● recording"}
-          {state === "uploading" && "uploading"}
+          {formatTime(duration)}
         </div>
       </div>
 
@@ -203,12 +214,20 @@ export function Recorder() {
         {isRecording && (
           <>
             <span
-              className="absolute inset-0 rounded-full bg-red-500/25 animate-ping pointer-events-none"
+              className="pointer-events-none absolute inset-0 rounded-full animate-ping"
+              style={{
+                background: "color-mix(in oklab, var(--brand-warn) 25%, transparent)",
+              }}
               aria-hidden
             />
             <span
-              className="absolute -inset-6 rounded-full border-2 border-red-500/40 animate-ping pointer-events-none"
-              style={{ animationDelay: "0.4s", animationDuration: "1.8s" }}
+              className="pointer-events-none absolute rounded-full animate-ping"
+              style={{
+                inset: "-32px",
+                border: "1px solid color-mix(in oklab, var(--brand-warn) 50%, transparent)",
+                animationDelay: "0.4s",
+                animationDuration: "1.8s",
+              }}
               aria-hidden
             />
           </>
@@ -217,13 +236,16 @@ export function Recorder() {
           type="button"
           onClick={isRecording ? stop : start}
           disabled={isBusy}
-          aria-label={isRecording ? "Stop recording" : "Start recording"}
-          className={`relative z-10 flex size-36 items-center justify-center rounded-full text-white shadow-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${buttonColor}`}
+          aria-label={isRecording ? "Zastaviť nahrávanie" : "Spustiť nahrávanie"}
+          className="relative z-10 flex size-36 items-center justify-center rounded-full text-brand-bg shadow-[var(--shadow-md)] transition-all duration-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+          style={{
+            background: isRecording ? "var(--brand-warn)" : "var(--brand-fg)",
+          }}
         >
           {state === "requesting" || state === "uploading" ? (
             <Loader2 className="size-14 animate-spin" />
           ) : isRecording ? (
-            <Square className="size-12 fill-white" />
+            <Square className="size-12 fill-current" />
           ) : (
             <Mic className="size-14" />
           )}
@@ -231,28 +253,35 @@ export function Recorder() {
       </div>
 
       <div
-        className="flex h-20 w-full max-w-sm items-center justify-center gap-1.5"
+        className="flex h-24 w-full max-w-md items-center justify-center gap-1.5"
         aria-hidden
       >
         {bars.map((value, i) => (
           <div
             key={i}
-            className={`w-2 rounded-full transition-all duration-75 ease-out ${
-              isRecording ? "bg-emerald-500" : "bg-muted"
-            }`}
+            className="w-2 rounded-full"
             style={{
               height: `${Math.max(8, Math.min(100, value * 220))}%`,
+              background: isRecording
+                ? "var(--brand-accent)"
+                : "var(--brand-line-strong)",
               opacity: isRecording ? 0.5 + value * 0.5 : 1,
+              transition: "height 75ms linear, background var(--t-base) var(--ease)",
             }}
           />
         ))}
       </div>
 
-      <p className="text-sm text-muted-foreground text-center max-w-xs">
-        {state === "idle" && "Tap the mic to start recording."}
-        {state === "requesting" && "Waiting for microphone permission…"}
-        {state === "recording" && "Tap the square to stop and save."}
-        {state === "uploading" && "Uploading — almost there."}
+      <p className="max-w-sm text-center text-sm leading-relaxed text-brand-fg-muted">
+        {state === "idle" && "Klepni na mikrofón a začni hovoriť."}
+        {state === "requesting" && "Povol prehliadaču prístup k mikrofónu…"}
+        {state === "recording" && (
+          <>
+            Klepni na <span className="italic-accent">stop</span>, keď
+            skončíš. Prepis vyrobí Whisper sám.
+          </>
+        )}
+        {state === "uploading" && "Ukladám a odovzdávam na prepis…"}
       </p>
     </div>
   );

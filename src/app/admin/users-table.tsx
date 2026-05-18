@@ -4,8 +4,6 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck, ShieldOff, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import type { AdminUserRow } from "@/lib/admin-users";
 
 export function UsersTable({
@@ -28,10 +26,10 @@ export function UsersTable({
         body: JSON.stringify({ role }),
       });
       if (!res.ok) throw new Error(`${res.status}`);
-      toast.success(`Role updated`);
+      toast.success("Rola aktualizovaná");
       startTransition(() => router.refresh());
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Update failed");
+      toast.error(err instanceof Error ? err.message : "Zmena zlyhala");
     } finally {
       setBusy(null);
     }
@@ -40,7 +38,7 @@ export function UsersTable({
   async function deleteUser(id: string, name: string) {
     if (
       !confirm(
-        `Delete ${name}? Their voice notes will also be deleted. Cannot be undone.`,
+        `Zmazať ${name}? Aj všetky jeho nahrávky budú zmazané. Nedá sa vrátiť.`,
       )
     ) {
       return;
@@ -49,94 +47,91 @@ export function UsersTable({
     try {
       const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error(`${res.status}`);
-      toast.success(`${name} removed`);
+      toast.success(`${name} odstránený`);
       startTransition(() => router.refresh());
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Delete failed");
+      toast.error(err instanceof Error ? err.message : "Zmazanie zlyhalo");
     } finally {
       setBusy(null);
     }
   }
 
   return (
-    <div className="rounded-lg border overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/50 text-left">
-          <tr>
-            <th className="px-4 py-3 font-medium">Name</th>
-            <th className="px-4 py-3 font-medium">Email</th>
-            <th className="px-4 py-3 font-medium">Role</th>
-            <th className="px-4 py-3 font-medium text-right">Notes</th>
-            <th className="px-4 py-3 font-medium text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((u) => {
-            const isMe = u.id === meId;
-            const isBusy = busy === u.id || pending;
-            return (
-              <tr key={u.id} className="border-t">
-                <td className="px-4 py-3">
-                  {u.name}
-                  {isMe && (
-                    <Badge variant="secondary" className="ml-2 text-xs">
-                      you
-                    </Badge>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
-                <td className="px-4 py-3">
-                  <Badge variant={u.role === "admin" ? "default" : "outline"}>
+    <ul className="flex flex-col gap-3">
+      {users.map((u) => {
+        const isMe = u.id === meId;
+        const isBusy = busy === u.id || pending;
+        return (
+          <li key={u.id} className="soft-card">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-1 min-w-0 flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{u.name}</span>
+                  {isMe && <span className="tag">ty</span>}
+                  <span
+                    className={u.role === "admin" ? "tag tag-filled" : "tag"}
+                  >
                     {u.role}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3 text-right tabular-nums">
+                  </span>
+                </div>
+                <span className="text-sm text-brand-fg-muted">{u.email}</span>
+              </div>
+
+              <div className="flex flex-col items-end gap-0.5">
+                <span
+                  className="font-mono tabular-nums"
+                  style={{ fontSize: "22px", letterSpacing: "-0.01em" }}
+                >
                   {u.notesCount}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-2">
-                    {u.role === "admin" ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={isMe || isBusy}
-                        onClick={() => setRole(u.id, "user")}
-                        title={isMe ? "Can't demote yourself" : "Demote"}
-                      >
-                        <ShieldOff className="size-4" />
-                        Demote
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={isBusy}
-                        onClick={() => setRole(u.id, "admin")}
-                      >
-                        <ShieldCheck className="size-4" />
-                        Promote
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={isMe || isBusy}
-                      onClick={() => deleteUser(u.id, u.name)}
-                      title={isMe ? "Can't delete yourself" : "Delete"}
-                    >
-                      {isBusy ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="size-4 text-destructive" />
-                      )}
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                </span>
+                <span className="eyebrow-bare" style={{ fontSize: "10px" }}>
+                  {u.notesCount === 1 ? "poznámka" : "poznámok"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {u.role === "admin" ? (
+                  <button
+                    type="button"
+                    disabled={isMe || isBusy}
+                    onClick={() => setRole(u.id, "user")}
+                    className="btn btn-secondary btn-sm"
+                    title={isMe ? "Sám seba nepremiestniš" : "Premiestniť na user"}
+                  >
+                    <ShieldOff className="btn-icon size-3.5" />
+                    Demote
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() => setRole(u.id, "admin")}
+                    className="btn btn-secondary btn-sm"
+                  >
+                    <ShieldCheck className="btn-icon size-3.5" />
+                    Promote
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={isMe || isBusy}
+                  onClick={() => deleteUser(u.id, u.name)}
+                  className="icon-btn"
+                  style={{ color: "var(--brand-warn)" }}
+                  title={isMe ? "Sám seba nezmažeš" : "Zmazať"}
+                  aria-label={`Zmazať ${u.name}`}
+                >
+                  {isBusy ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="size-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

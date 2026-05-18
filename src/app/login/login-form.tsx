@@ -3,18 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowUpRight, Loader2 } from "lucide-react";
 import { signIn } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 export function LoginForm() {
   const router = useRouter();
@@ -29,7 +21,7 @@ export function LoginForm() {
     setError(null);
     const result = await signIn.email({ email, password });
     if (result.error) {
-      setError(result.error.message ?? "Sign in failed");
+      setError(result.error.message ?? "Prihlásenie zlyhalo");
       setLoading(false);
       return;
     }
@@ -38,53 +30,81 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle>Sign in</CardTitle>
-        <CardDescription>Voice notes for the family.</CardDescription>
-      </CardHeader>
-      <form onSubmit={onSubmit}>
-        <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          {error && (
-            <p className="text-sm text-destructive" role="alert">
-              {error}
-            </p>
-          )}
-        </CardContent>
-        <CardFooter className="flex flex-col gap-3 mt-4">
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Signing in…" : "Sign in"}
-          </Button>
-          <p className="text-sm text-muted-foreground">
-            No account?{" "}
-            <Link href="/register" className="underline">
-              Register
-            </Link>
+    <div className="flex w-full max-w-sm flex-col gap-8">
+      <div className="flex flex-col gap-3">
+        <span className="eyebrow">voicenotes</span>
+        <h1
+          className="font-medium leading-[1.0]"
+          style={{ fontSize: "clamp(40px, 6vw, 64px)", letterSpacing: "-0.03em" }}
+        >
+          Vitaj <span className="italic-accent">späť</span>.
+        </h1>
+        <p className="text-brand-fg-muted">Prihlás sa, aby si pokračoval.</p>
+      </div>
+
+      <form onSubmit={onSubmit} className="flex flex-col gap-5">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="email" className="eyebrow-bare">
+            Email
+          </Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="bg-card border-brand-line-strong h-11 text-base"
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="password" className="eyebrow-bare">
+            Heslo
+          </Label>
+          <Input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="bg-card border-brand-line-strong h-11 text-base"
+          />
+        </div>
+
+        {error && (
+          <p
+            className="text-sm"
+            style={{ color: "var(--brand-warn)" }}
+            role="alert"
+          >
+            {error}
           </p>
-        </CardFooter>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="btn btn-primary w-full"
+        >
+          {loading ? (
+            <Loader2 className="btn-icon size-4 animate-spin" />
+          ) : (
+            <ArrowUpRight className="btn-icon size-4" />
+          )}
+          {loading ? "Prihlasujem…" : "Prihlásiť sa"}
+        </button>
       </form>
-    </Card>
+
+      <p className="text-sm text-brand-fg-muted">
+        Bez účtu?{" "}
+        <Link
+          href="/register"
+          className="text-brand-fg underline decoration-dotted underline-offset-4"
+        >
+          Registrovať
+        </Link>
+      </p>
+    </div>
   );
 }
