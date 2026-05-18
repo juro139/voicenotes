@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Clock, Share2, Users, Tag } from "lucide-react";
+import { Clock, Share2, Tag, User as UserIcon, Mic } from "lucide-react";
 import type { NoteListItem } from "@/lib/notes";
 import { Badge } from "@/components/ui/badge";
+import { StatusPill } from "@/components/status-pill";
 
 function formatDuration(s: number): string {
   const total = Math.floor(s);
@@ -22,13 +23,23 @@ function formatRelative(d: Date): string {
   return d.toLocaleDateString();
 }
 
+const ACCENT: Record<NoteListItem["status"], string> = {
+  pending: "before:bg-amber-500",
+  transcribed: "before:bg-sky-500",
+  categorized: "before:bg-emerald-500",
+};
+
 export function NoteList({ notes }: { notes: NoteListItem[] }) {
   if (notes.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed p-10 text-center">
-        <p className="text-muted-foreground">
-          No notes yet. Tap{" "}
-          <Link href="/record" className="underline">
+      <div className="rounded-2xl border border-dashed p-12 text-center">
+        <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-muted">
+          <Mic className="size-7 text-muted-foreground" />
+        </div>
+        <p className="font-medium mb-1">No voice notes yet</p>
+        <p className="text-sm text-muted-foreground">
+          Tap{" "}
+          <Link href="/record" className="underline decoration-dotted">
             Record
           </Link>{" "}
           to capture your first note.
@@ -43,62 +54,68 @@ export function NoteList({ notes }: { notes: NoteListItem[] }) {
         <li key={note.id}>
           <Link
             href={`/note/${note.id}`}
-            className="block rounded-lg border bg-card p-4 hover:bg-accent/40 transition-colors"
+            className={`group relative block overflow-hidden rounded-2xl border bg-card p-5 transition-all hover:border-foreground/20 hover:bg-card/60 hover:shadow-md before:absolute before:left-0 before:top-0 before:h-full before:w-1 ${ACCENT[note.status]}`}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <h3 className="font-medium leading-snug line-clamp-2 flex-1">
+                {note.summary ??
+                  (note.status === "pending"
+                    ? "New recording"
+                    : "Untitled recording")}
+              </h3>
+              <StatusPill status={note.status} />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Clock className="size-3" />
+                {formatRelative(note.createdAt)}
+              </span>
+              <span aria-hidden>·</span>
+              <span>{formatDuration(note.durationSeconds)}</span>
+              {!note.mine && (
+                <>
+                  <span aria-hidden>·</span>
                   <span className="flex items-center gap-1">
-                    <Clock className="size-3" />
-                    {formatRelative(note.createdAt)}
+                    <UserIcon className="size-3" />
+                    {note.userName}
                   </span>
-                  <span>·</span>
-                  <span>{formatDuration(note.durationSeconds)}</span>
-                  {!note.mine && (
-                    <>
-                      <span>·</span>
-                      <span className="flex items-center gap-1">
-                        <Users className="size-3" />
-                        {note.userName}
-                      </span>
-                    </>
-                  )}
-                  {note.shared && note.mine && (
-                    <>
-                      <span>·</span>
-                      <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                        <Share2 className="size-3" />
-                        shared
-                      </span>
-                    </>
-                  )}
-                </div>
-                <p className="mt-2 text-sm font-medium line-clamp-2">
-                  {note.summary ??
-                    (note.status === "pending"
-                      ? "Transcribing…"
-                      : "(no summary yet)")}
-                </p>
+                </>
+              )}
+              {note.shared && note.mine && (
+                <>
+                  <span aria-hidden>·</span>
+                  <span className="flex items-center gap-1 text-emerald-500">
+                    <Share2 className="size-3" />
+                    shared
+                  </span>
+                </>
+              )}
+            </div>
+
+            {(note.category || note.tags.length > 0) && (
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                {note.category && (
+                  <Badge variant="outline" className="text-xs">
+                    {note.category}
+                  </Badge>
+                )}
                 {note.tags.length > 0 && (
-                  <div className="mt-2 flex flex-wrap items-center gap-1">
+                  <>
                     <Tag className="size-3 text-muted-foreground" />
                     {note.tags.map((t) => (
-                      <Badge key={t} variant="secondary" className="text-xs">
+                      <Badge
+                        key={t}
+                        variant="secondary"
+                        className="text-xs"
+                      >
                         {t}
                       </Badge>
                     ))}
-                  </div>
+                  </>
                 )}
               </div>
-              <div className="flex flex-col items-end gap-1 shrink-0">
-                {note.category && (
-                  <Badge variant="outline">{note.category}</Badge>
-                )}
-                {note.status === "pending" && (
-                  <Badge variant="secondary">pending</Badge>
-                )}
-              </div>
-            </div>
+            )}
           </Link>
         </li>
       ))}

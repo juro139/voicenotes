@@ -35,7 +35,13 @@ export function Topbar({ user }: { user: TopbarUser }) {
   return (
     <header className="border-b sticky top-0 bg-background/80 backdrop-blur z-10">
       <div className="mx-auto max-w-5xl flex items-center justify-between px-4 py-3">
-        <Link href="/" className="font-semibold text-lg tracking-tight">
+        <Link
+          href="/"
+          className="flex items-center gap-2 font-semibold text-lg tracking-tight"
+        >
+          <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-500">
+            <Mic className="size-4" />
+          </span>
           voicenotes
         </Link>
         <div className="flex items-center gap-2">

@@ -1,13 +1,22 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Clock, Loader2, Share2 } from "lucide-react";
 import { requireSession } from "@/lib/server-auth";
 import { getNoteForViewer, canEditNote } from "@/lib/notes";
 import { Topbar } from "@/components/topbar";
 import { Button } from "@/components/ui/button";
+import { AutoRefresh } from "@/components/auto-refresh";
+import { StatusPill } from "@/components/status-pill";
 import { NoteEditor } from "./note-editor";
 
 export const dynamic = "force-dynamic";
+
+function formatDuration(s: number): string {
+  const total = Math.floor(s);
+  const m = Math.floor(total / 60);
+  const r = total % 60;
+  return `${m}:${r.toString().padStart(2, "0")}`;
+}
 
 export default async function NotePage({
   params,
@@ -21,10 +30,12 @@ export default async function NotePage({
   if (!note) notFound();
 
   const editable = canEditNote(note, session.user.id, isAdmin);
+  const isPending = note.status === "pending";
 
   return (
     <>
       <Topbar user={session.user} />
+      <AutoRefresh enabled={isPending} intervalMs={3000} />
       <main className="mx-auto max-w-3xl flex-1 w-full px-4 py-6">
         <div className="mb-4">
           <Button variant="ghost" size="sm" asChild>
@@ -35,29 +46,65 @@ export default async function NotePage({
           </Button>
         </div>
 
-        <div className="mb-6">
-          <h1 className="text-xl font-semibold tracking-tight mb-1">
-            {note.summary ?? "Untitled recording"}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {note.userName} ·{" "}
-            {note.createdAt.toLocaleString("sk-SK", {
-              dateStyle: "medium",
-              timeStyle: "short",
-            })}
-            {" · "}
-            {note.durationSeconds.toFixed(1)}s
-          </p>
+        <div className="mb-6 rounded-2xl border bg-gradient-to-br from-card to-card/40 p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {note.summary ?? "Untitled recording"}
+            </h1>
+            <StatusPill status={note.status} />
+          </div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+            <span>{note.userName}</span>
+            <span aria-hidden>·</span>
+            <span>
+              {note.createdAt.toLocaleString("sk-SK", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </span>
+            <span aria-hidden>·</span>
+            <span className="flex items-center gap-1">
+              <Clock className="size-3.5" />
+              {formatDuration(note.durationSeconds)}
+            </span>
+            {note.shared && (
+              <>
+                <span aria-hidden>·</span>
+                <span className="flex items-center gap-1 text-emerald-500">
+                  <Share2 className="size-3.5" />
+                  shared
+                </span>
+              </>
+            )}
+          </div>
         </div>
 
-        <audio
-          controls
-          preload="metadata"
-          className="w-full mb-6"
-          src={`/api/audio/${note.id}`}
-        />
+        <div className="rounded-2xl border bg-muted/30 p-4 mb-6">
+          <audio
+            controls
+            preload="metadata"
+            className="w-full"
+            src={`/api/audio/${note.id}`}
+          />
+        </div>
 
-        <NoteEditor note={note} editable={editable} />
+        {isPending && (
+          <div className="mb-6 flex items-center gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 dark:text-amber-200">
+            <Loader2 className="size-4 animate-spin" />
+            <div>
+              <p className="font-medium">Transcribing in background…</p>
+              <p className="text-xs opacity-80">
+                This page will refresh automatically once it's done.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <NoteEditor
+          key={`${note.id}-${note.status}-${note.rawText?.length ?? 0}`}
+          note={note}
+          editable={editable}
+        />
       </main>
     </>
   );

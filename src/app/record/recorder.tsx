@@ -4,9 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Mic, Square, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 type State = "idle" | "requesting" | "recording" | "uploading";
+
+const NUM_BARS = 9;
 
 const MIME_CANDIDATES = [
   "audio/webm;codecs=opus",
@@ -41,7 +42,9 @@ export function Recorder() {
   const router = useRouter();
   const [state, setState] = useState<State>("idle");
   const [duration, setDuration] = useState(0);
-  const [level, setLevel] = useState(0);
+  const [bars, setBars] = useState<number[]>(() =>
+    new Array(NUM_BARS).fill(0),
+  );
 
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -65,7 +68,7 @@ export function Recorder() {
     streamRef.current = null;
     audioCtxRef.current?.close().catch(() => {});
     audioCtxRef.current = null;
-    setLevel(0);
+    setBars(new Array(NUM_BARS).fill(0));
   }, []);
 
   useEffect(() => () => cleanup(), [cleanup]);
@@ -107,15 +110,23 @@ export function Recorder() {
       const source = ctx.createMediaStreamSource(stream);
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.7;
       source.connect(analyser);
       audioCtxRef.current = ctx;
 
       const data = new Uint8Array(analyser.frequencyBinCount);
+      const bandSize = Math.floor(data.length / NUM_BARS);
       const tick = () => {
         analyser.getByteFrequencyData(data);
-        let sum = 0;
-        for (let i = 0; i < data.length; i++) sum += data[i];
-        setLevel(sum / data.length / 255);
+        const next = new Array(NUM_BARS).fill(0);
+        for (let b = 0; b < NUM_BARS; b++) {
+          let sum = 0;
+          for (let i = 0; i < bandSize; i++) {
+            sum += data[b * bandSize + i] ?? 0;
+          }
+          next[b] = sum / bandSize / 255;
+        }
+        setBars(next);
         rafRef.current = requestAnimationFrame(tick);
       };
       tick();
@@ -166,53 +177,82 @@ export function Recorder() {
   const isRecording = state === "recording";
   const isBusy = state === "requesting" || state === "uploading";
 
+  const buttonColor = isRecording
+    ? "bg-red-500 hover:bg-red-600 shadow-red-500/30"
+    : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30";
+
   return (
-    <div className="flex flex-col items-center gap-8 py-12">
-      <div className="text-5xl font-mono tabular-nums tracking-tight">
-        {formatTime(duration)}
+    <div className="flex flex-col items-center gap-10 py-12">
+      <div className="flex flex-col items-center gap-1">
+        <div className="text-6xl sm:text-7xl font-mono tabular-nums tracking-tight">
+          {formatTime(duration)}
+        </div>
+        <div
+          className={`text-xs font-medium uppercase tracking-widest ${
+            isRecording ? "text-red-500" : "text-muted-foreground"
+          }`}
+        >
+          {state === "idle" && "ready"}
+          {state === "requesting" && "asking for microphone"}
+          {state === "recording" && "● recording"}
+          {state === "uploading" && "uploading"}
+        </div>
       </div>
 
-      <div className="relative">
+      <div className="relative flex items-center justify-center">
         {isRecording && (
-          <span
-            className="absolute inset-0 rounded-full bg-red-500/20 animate-ping"
-            aria-hidden
-          />
+          <>
+            <span
+              className="absolute inset-0 rounded-full bg-red-500/25 animate-ping pointer-events-none"
+              aria-hidden
+            />
+            <span
+              className="absolute -inset-6 rounded-full border-2 border-red-500/40 animate-ping pointer-events-none"
+              style={{ animationDelay: "0.4s", animationDuration: "1.8s" }}
+              aria-hidden
+            />
+          </>
         )}
-        <Button
+        <button
           type="button"
-          size="lg"
           onClick={isRecording ? stop : start}
           disabled={isBusy}
-          className={`size-32 rounded-full text-white shadow-lg ${
-            isRecording
-              ? "bg-red-600 hover:bg-red-700"
-              : "bg-emerald-600 hover:bg-emerald-700"
-          }`}
           aria-label={isRecording ? "Stop recording" : "Start recording"}
+          className={`relative z-10 flex size-36 items-center justify-center rounded-full text-white shadow-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${buttonColor}`}
         >
           {state === "requesting" || state === "uploading" ? (
-            <Loader2 className="size-12 animate-spin" />
+            <Loader2 className="size-14 animate-spin" />
           ) : isRecording ? (
             <Square className="size-12 fill-white" />
           ) : (
-            <Mic className="size-12" />
+            <Mic className="size-14" />
           )}
-        </Button>
+        </button>
       </div>
 
-      <div className="h-3 w-64 rounded-full bg-muted overflow-hidden">
-        <div
-          className="h-full bg-emerald-500 transition-[width] duration-75"
-          style={{ width: `${Math.min(100, level * 100 * 1.5)}%` }}
-        />
+      <div
+        className="flex h-20 w-full max-w-sm items-center justify-center gap-1.5"
+        aria-hidden
+      >
+        {bars.map((value, i) => (
+          <div
+            key={i}
+            className={`w-2 rounded-full transition-all duration-75 ease-out ${
+              isRecording ? "bg-emerald-500" : "bg-muted"
+            }`}
+            style={{
+              height: `${Math.max(8, Math.min(100, value * 220))}%`,
+              opacity: isRecording ? 0.5 + value * 0.5 : 1,
+            }}
+          />
+        ))}
       </div>
 
       <p className="text-sm text-muted-foreground text-center max-w-xs">
-        {state === "idle" && "Tap to start recording."}
-        {state === "requesting" && "Waiting for microphone…"}
-        {state === "recording" && "Recording — tap stop when done."}
-        {state === "uploading" && "Uploading and saving…"}
+        {state === "idle" && "Tap the mic to start recording."}
+        {state === "requesting" && "Waiting for microphone permission…"}
+        {state === "recording" && "Tap the square to stop and save."}
+        {state === "uploading" && "Uploading — almost there."}
       </p>
     </div>
   );
