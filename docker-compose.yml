@@ -42,7 +42,11 @@ services:
     image: voicenotes:latest
     restart: unless-stopped
     depends_on:
-      - app
+      app:
+        # Wait until /api/auth/get-session responds — by then drizzle-kit
+        # migrate has finished and the voicenote table exists, so worker's
+        # first pending-poll won't crash with SQLITE_ERROR.
+        condition: service_healthy
     environment:
       AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env}
       DATABASE_URL: file:/data/voicenotes.db
