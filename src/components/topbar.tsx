@@ -1,22 +1,5 @@
-"use client";
-
 import Link from "next/link";
-import { signOut } from "@/lib/auth-client";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Mic,
-  UserCircle2,
-  LogOut,
-  Users,
-  ArrowUpRight,
-} from "lucide-react";
+import { Mic, UserCircle2 } from "lucide-react";
 import { PWARegister } from "@/components/pwa-register";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -26,20 +9,7 @@ type TopbarUser = {
   role: string;
 };
 
-export function Topbar({ user }: { user: TopbarUser }) {
-  const isAdmin = user.role === "admin";
-
-  async function onSignOut() {
-    try {
-      await signOut();
-    } catch (err) {
-      // Even if the request fails (network, CSRF mismatch, expired token),
-      // wipe the client and force the user to /login — they'll log in fresh.
-      console.error("[signOut] request failed:", err);
-    }
-    window.location.href = "/login";
-  }
-
+export function Topbar({ user: _user }: { user: TopbarUser }) {
   return (
     <header
       className="sticky top-0 z-50 border-b border-brand-line"
@@ -49,7 +19,7 @@ export function Topbar({ user }: { user: TopbarUser }) {
         background: "color-mix(in oklab, var(--brand-bg) 80%, transparent)",
       }}
     >
-      <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-3.5">
+      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:gap-6 sm:px-6 sm:py-3.5">
         <Link
           href="/"
           className="brand-mark-trigger flex items-center gap-2.5 text-[15px] font-medium tracking-tight"
@@ -60,7 +30,7 @@ export function Topbar({ user }: { user: TopbarUser }) {
           voicenotes
         </Link>
 
-        <span className="status-pill hidden sm:flex">
+        <span className="status-pill hidden md:flex">
           <span className="dot" aria-hidden />
           Live
         </span>
@@ -72,41 +42,14 @@ export function Topbar({ user }: { user: TopbarUser }) {
             <Mic className="btn-icon size-3.5" />
             Record
           </Link>
-          <DropdownMenu>
-            <DropdownMenuTrigger className="icon-btn" aria-label="Account">
-              <UserCircle2 className="size-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="min-w-56 border-brand-line-strong bg-card"
-            >
-              <DropdownMenuLabel>
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-brand-fg">
-                    {user.name}
-                  </span>
-                  <span className="text-xs text-brand-fg-muted">
-                    {user.email}
-                  </span>
-                  {isAdmin && (
-                    <span className="tag tag-filled w-fit mt-1">admin</span>
-                  )}
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-brand-line" />
-              {isAdmin && (
-                <DropdownMenuItem render={<Link href="/admin" />}>
-                  <Users className="size-4" />
-                  Users
-                  <ArrowUpRight className="ml-auto size-3.5 opacity-60" />
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={onSignOut}>
-                <LogOut className="size-4" />
-                Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Link
+            href="/profile"
+            className="icon-btn"
+            aria-label="Účet"
+            title="Účet a odhlásenie"
+          >
+            <UserCircle2 className="size-4" />
+          </Link>
         </div>
       </div>
     </header>
