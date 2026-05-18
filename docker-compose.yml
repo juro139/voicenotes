@@ -14,13 +14,14 @@ services:
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       GROQ_MODEL: ${GROQ_MODEL:-whisper-large-v3}
       NODE_ENV: production
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
+    # When deploying behind a Coolify-managed Traefik (or any reverse proxy),
+    # Traefik talks to the container over the Docker network — no host port
+    # mapping needed. For raw `docker compose up` testing, add a `ports:`
+    # mapping here locally.
     volumes:
       - voicenotes-data:/data
-      # When deploying with Coolify the migrations folder is baked in via the
-      # builder stage; we mount it again here only for `db:migrate` one-shot
-      # runs via `docker compose run`.
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/auth/get-session').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
@@ -29,6 +30,9 @@ services:
       start_period: 30s
 
   worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: voicenotes:latest
     restart: unless-stopped
     depends_on:
@@ -44,6 +48,9 @@ services:
       NODE_ENV: production
     volumes:
       - voicenotes-data:/data
+    # Skip the migration entrypoint — the app container already runs migrations
+    # on boot and concurrent drizzle-kit migrate races on the same SQLite file.
+    entrypoint: ["/usr/bin/tini", "--"]
     command: ["node_modules/.bin/tsx", "src/worker.ts"]
 
 volumes:

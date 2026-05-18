@@ -65,9 +65,12 @@ COPY --from=builder --chown=voicenotes:voicenotes /app/drizzle.config.ts ./drizz
 COPY --from=builder --chown=voicenotes:voicenotes /app/tsconfig.json ./tsconfig.json
 COPY --from=builder --chown=voicenotes:voicenotes /app/package.json ./package.json
 
+COPY --chown=voicenotes:voicenotes scripts/docker-entrypoint.sh /usr/local/bin/voicenotes-entrypoint
+RUN chmod +x /usr/local/bin/voicenotes-entrypoint
+
 USER voicenotes
 EXPOSE 3000
 VOLUME ["/data"]
 
-ENTRYPOINT ["/usr/bin/tini", "--"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/voicenotes-entrypoint"]
 CMD ["node", "server.js"]

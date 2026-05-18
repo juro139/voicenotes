@@ -93,19 +93,34 @@ See [.env.example](./.env.example). The important ones:
 The VM (`voicenotes`, 192.168.0.121 / 100.120.227.4) already has Docker +
 Coolify + Cloudflared running and the tunnel `notes.cugovci.uk` configured.
 
-### Option A — Coolify dashboard
+### Option A — Coolify dashboard (recommended)
+
+The packet path is:
+
+```
+phone ─▶ Cloudflare edge (TLS) ─▶ CF Tunnel ─▶ VM :80 (Traefik in Coolify) ─▶ app :3000
+```
+
+So the app stays "dumb" — listens on 3000, no reverse proxy in-container.
+Coolify injects Traefik labels at deploy time.
 
 1. Open http://192.168.0.121:8000 (LAN or Tailscale).
-2. New Resource → Public Repository → `https://github.com/juro139/voicenotes`.
-3. Build pack: **Docker Compose** with `docker-compose.yml`.
-4. Set environment variables: `AUTH_SECRET`, `NEXT_PUBLIC_URL=https://notes.cugovci.uk`, optionally override `WHISPER_MODEL`.
-5. Coolify provisions Traefik routes automatically. Domain
-   `notes.cugovci.uk` is already wired through the Cloudflare tunnel to
-   Traefik on :80, so the site goes live once the container is healthy.
-6. Run migrations on first boot:
-   ```bash
-   docker compose run --rm app npx drizzle-kit migrate
-   ```
+2. **New Resource → Public Repository** → `https://github.com/juro139/voicenotes`.
+3. Build pack: **Docker Compose** (Coolify auto-detects `docker-compose.yml`).
+4. **Domain:** `notes.cugovci.uk`. **Service:** `app`. **Port:** `3000`.
+5. **Environment variables** (paste once, Coolify forwards to both
+   `app` and `worker`):
+   - `AUTH_SECRET` — generate a fresh 32+ char secret (don't reuse the
+     local dev one).
+   - `NEXT_PUBLIC_URL=https://notes.cugovci.uk`
+   - `GROQ_API_KEY=gsk_...` — your Groq key.
+6. Deploy. First build is 5–10 minutes (Python venv + faster-whisper
+   fallback layer; subsequent builds hit the cache).
+7. Migrations apply automatically on boot via `scripts/docker-entrypoint.sh`.
+
+Cloudflare DNS + tunnel ingress for `notes.cugovci.uk` is already pointed at
+`localhost:80` on the VM, where Coolify's Traefik will route the Host header
+to the new container — no DNS or tunnel changes needed.
 
 ### Option B — Direct docker compose on the VM
 
@@ -125,6 +140,23 @@ docker compose up -d
 The first email to register becomes the admin. Visit
 `https://notes.cugovci.uk/register`, sign up, then invite family by
 sharing the public URL — subsequent accounts default to role `user`.
+
+### Installing as a PWA on your phone
+
+The app needs **HTTPS** for `navigator.mediaDevices.getUserMedia` (mic
+permission). Local HTTP works only on `localhost` for desktop dev — on a
+phone you must hit `https://notes.cugovci.uk`.
+
+- **Android (Chrome / Edge):** Open the URL, sign in, then either tap
+  the **"Install"** button that appears in the Topbar (triggered by
+  `beforeinstallprompt`) or use the browser's `⋮ → Install app`.
+- **iOS (Safari 16.4+):** Open the URL, sign in, tap the **Share** icon
+  (square with up-arrow) → **"Add to Home Screen"**. iOS does not fire
+  `beforeinstallprompt`, so the in-app Install button stays hidden — the
+  Share-menu route is the only way.
+- After install, launch from the home-screen icon. The PWA opens
+  standalone (no browser chrome) and the service worker keeps the
+  `/record` shell available offline once it's been visited once.
 
 ## MCP server (Claude Code integration)
 
