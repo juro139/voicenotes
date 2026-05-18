@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,17 +46,19 @@ export function Topbar({ user }: { user: TopbarUser }) {
         </Link>
         <div className="flex items-center gap-2">
           <PWARegister />
-          <Button asChild size="sm">
-            <Link href="/record">
-              <Mic className="size-4" />
-              Record
-            </Link>
-          </Button>
+          <Link
+            href="/record"
+            className={buttonVariants({ size: "sm" })}
+          >
+            <Mic className="size-3.5" />
+            Record
+          </Link>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Account">
-                <UserCircle2 className="size-5" />
-              </Button>
+            <DropdownMenuTrigger
+              className={buttonVariants({ variant: "ghost", size: "icon" })}
+              aria-label="Account"
+            >
+              <UserCircle2 className="size-5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-56">
               <DropdownMenuLabel>
@@ -74,11 +76,9 @@ export function Topbar({ user }: { user: TopbarUser }) {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {isAdmin && (
-                <DropdownMenuItem asChild>
-                  <Link href="/admin">
-                    <Users className="size-4" />
-                    Users
-                  </Link>
+                <DropdownMenuItem render={<Link href="/admin" />}>
+                  <Users className="size-4" />
+                  Users
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={onSignOut}>

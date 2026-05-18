@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Mic } from "lucide-react";
 import { requireSession } from "@/lib/server-auth";
 import { Topbar } from "@/components/topbar";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { NoteList } from "@/components/note-list";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { listNotesVisibleTo } from "@/lib/notes";
@@ -34,12 +34,10 @@ export default async function Home() {
               {hasPending && " · transcribing in background"}
             </p>
           </div>
-          <Button asChild>
-            <Link href="/record">
-              <Mic className="size-4" />
-              New
-            </Link>
-          </Button>
+          <Link href="/record" className={buttonVariants()}>
+            <Mic className="size-3.5" />
+            New
+          </Link>
         </div>
         <NoteList notes={notes} />
       </main>

@@ -4,7 +4,7 @@ import { ArrowLeft, Clock, Loader2, Share2 } from "lucide-react";
 import { requireSession } from "@/lib/server-auth";
 import { getNoteForViewer, canEditNote } from "@/lib/notes";
 import { Topbar } from "@/components/topbar";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { StatusPill } from "@/components/status-pill";
 import { NoteEditor } from "./note-editor";
@@ -38,12 +38,13 @@ export default async function NotePage({
       <AutoRefresh enabled={isPending} intervalMs={3000} />
       <main className="mx-auto max-w-3xl flex-1 w-full px-4 py-6">
         <div className="mb-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/">
-              <ArrowLeft className="size-4" />
-              All notes
-            </Link>
-          </Button>
+          <Link
+            href="/"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
+          >
+            <ArrowLeft className="size-3.5" />
+            All notes
+          </Link>
         </div>
 
         <div className="mb-6 rounded-2xl border bg-gradient-to-br from-card to-card/40 p-5 shadow-sm">
