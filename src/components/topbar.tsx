@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Mic, UserCircle2, LogOut, Users } from "lucide-react";
+import { PWARegister } from "@/components/pwa-register";
 
 type TopbarUser = {
   name: string;
@@ -38,6 +39,7 @@ export function Topbar({ user }: { user: TopbarUser }) {
           voicenotes
         </Link>
         <div className="flex items-center gap-2">
+          <PWARegister />
           <Button asChild size="sm">
             <Link href="/record">
               <Mic className="size-4" />

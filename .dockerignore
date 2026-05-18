@@ -1,0 +1,33 @@
+.git
+.github
+.gitignore
+
+# Local node_modules and Next build are rebuilt inside the image
+node_modules
+.next
+.swc
+
+# Local data must never leak into the image
+data
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Local env (production env comes from the Coolify dashboard / .env on host)
+.env
+.env.local
+.env.*.local
+
+# Editor + OS noise
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Python venv (for local dev only)
+.venv
+
+# Tests / docs not needed in image
+README.md
+ONBOARDING.md

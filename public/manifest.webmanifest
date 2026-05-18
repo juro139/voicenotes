@@ -1,0 +1,33 @@
+{
+  "name": "voicenotes",
+  "short_name": "voicenotes",
+  "description": "Voice notes for the family — record, transcribe, share.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "lang": "sk",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New recording",
+      "short_name": "Record",
+      "url": "/record"
+    }
+  ]
+}

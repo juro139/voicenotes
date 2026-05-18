@@ -1,0 +1,46 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: voicenotes:latest
+    restart: unless-stopped
+    environment:
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env}
+      DATABASE_URL: file:/data/voicenotes.db
+      AUDIO_DIR: /data/audio
+      NEXT_PUBLIC_URL: ${NEXT_PUBLIC_URL:-https://notes.cugovci.uk}
+      WHISPER_MODEL: ${WHISPER_MODEL:-medium}
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    volumes:
+      - voicenotes-data:/data
+      # When deploying with Coolify the migrations folder is baked in via the
+      # builder stage; we mount it again here only for `db:migrate` one-shot
+      # runs via `docker compose run`.
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/auth/get-session').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  worker:
+    image: voicenotes:latest
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env}
+      DATABASE_URL: file:/data/voicenotes.db
+      AUDIO_DIR: /data/audio
+      WHISPER_MODEL: ${WHISPER_MODEL:-medium}
+      WORKER_POLL_MS: ${WORKER_POLL_MS:-5000}
+      NODE_ENV: production
+    volumes:
+      - voicenotes-data:/data
+    command: ["node_modules/.bin/tsx", "src/worker.ts"]
+
+volumes:
+  voicenotes-data:
