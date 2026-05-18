@@ -3,7 +3,7 @@ import { getSession } from "@/lib/server-auth";
 import { RegisterForm } from "./register-form";
 
 export const metadata = {
-  title: "Register · voicenotes",
+  title: "Registrácia",
 };
 
 export default async function RegisterPage() {

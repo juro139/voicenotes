@@ -3,7 +3,7 @@ import { getSession } from "@/lib/server-auth";
 import { LoginForm } from "./login-form";
 
 export const metadata = {
-  title: "Sign in · voicenotes",
+  title: "Prihlásenie",
 };
 
 export default async function LoginPage() {
