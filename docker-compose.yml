@@ -6,10 +6,16 @@ services:
     image: voicenotes:latest
     restart: unless-stopped
     environment:
+      # Coolify v4 magic variable: setting SERVICE_FQDN_<SERVICE>_<PORT> tells
+      # Coolify to auto-generate Traefik labels routing the configured domain
+      # to this container's port. The actual hostname is filled in from the
+      # Coolify UI (Domains field for service "app"). NEXT_PUBLIC_URL is wired
+      # to the same value so the Next.js app + auth use the canonical URL.
+      SERVICE_FQDN_APP_3000: ${SERVICE_FQDN_APP_3000:-https://notes.cugovci.uk}
+      NEXT_PUBLIC_URL: ${SERVICE_FQDN_APP_3000:-${NEXT_PUBLIC_URL:-https://notes.cugovci.uk}}
       AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env}
       DATABASE_URL: file:/data/voicenotes.db
       AUDIO_DIR: /data/audio
-      NEXT_PUBLIC_URL: ${NEXT_PUBLIC_URL:-https://notes.cugovci.uk}
       WHISPER_MODEL: ${WHISPER_MODEL:-medium}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       GROQ_MODEL: ${GROQ_MODEL:-whisper-large-v3}
