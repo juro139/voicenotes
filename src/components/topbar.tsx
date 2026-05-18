@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth-client";
 import {
   DropdownMenu,
@@ -28,13 +27,17 @@ type TopbarUser = {
 };
 
 export function Topbar({ user }: { user: TopbarUser }) {
-  const router = useRouter();
   const isAdmin = user.role === "admin";
 
   async function onSignOut() {
-    await signOut();
-    router.push("/login");
-    router.refresh();
+    try {
+      await signOut();
+    } catch (err) {
+      // Even if the request fails (network, CSRF mismatch, expired token),
+      // wipe the client and force the user to /login — they'll log in fresh.
+      console.error("[signOut] request failed:", err);
+    }
+    window.location.href = "/login";
   }
 
   return (

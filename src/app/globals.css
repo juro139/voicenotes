@@ -9,19 +9,19 @@
    Light is default; .dark on <html> switches to dark theme.
    ============================================================ */
 :root {
-  /* Warm cream surfaces */
-  --brand-bg: #f1ead8;
-  --brand-bg-elev: #e7dfca;
-  --brand-fg: #1f1d18;
-  --brand-fg-muted: #6b6553;
-  --brand-fg-subtle: #a8a292;
-  --brand-line: rgba(31, 29, 24, 0.10);
-  --brand-line-strong: rgba(31, 29, 24, 0.20);
+  /* Soft lavender surfaces */
+  --brand-bg: #ece6f3;
+  --brand-bg-elev: #ddd4ea;
+  --brand-fg: #1c1730;
+  --brand-fg-muted: #6b6280;
+  --brand-fg-subtle: #a8a0bd;
+  --brand-line: rgba(28, 23, 48, 0.10);
+  --brand-line-strong: rgba(28, 23, 48, 0.20);
 
-  --brand-accent: #2a5d3f;      /* moss green */
-  --brand-accent-ink: #f2eee8;
-  --brand-accent-soft: #d6e2d2;
-  --brand-blue: #3e5c76;
+  --brand-accent: #4b2c8f;      /* deep purple — was moss green */
+  --brand-accent-ink: #efe9ff;
+  --brand-accent-soft: #d6c9ee;
+  --brand-blue: #4c6fa6;
   --brand-warn: #c97a3a;
 
   /* Editorial typography (Geist + Instrument Serif loaded in layout.tsx) */
@@ -79,17 +79,17 @@
 }
 
 .dark {
-  --brand-bg: #14130f;
-  --brand-bg-elev: #1c1b16;
-  --brand-fg: #f2eee8;
-  --brand-fg-muted: #9b948a;
-  --brand-fg-subtle: #5a554e;
-  --brand-line: rgba(242, 238, 232, 0.10);
-  --brand-line-strong: rgba(242, 238, 232, 0.22);
+  --brand-bg: #14121e;
+  --brand-bg-elev: #1d1a2c;
+  --brand-fg: #ece8f4;
+  --brand-fg-muted: #9b94b0;
+  --brand-fg-subtle: #5a5470;
+  --brand-line: rgba(236, 232, 244, 0.10);
+  --brand-line-strong: rgba(236, 232, 244, 0.22);
 
-  --brand-accent: #6fbb87;
-  --brand-accent-ink: #0b1d12;
-  --brand-accent-soft: #1f3a28;
+  --brand-accent: #b59aff;
+  --brand-accent-ink: #14121e;
+  --brand-accent-soft: #2a1f4a;
   --brand-blue: #8aa9c2;
   --brand-warn: #e3a06b;
 

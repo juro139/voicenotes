@@ -7,21 +7,21 @@ const CONFIG: Record<
   { label: string; classes: string; icon: typeof Loader2 }
 > = {
   pending: {
-    label: "Transcribing",
+    label: "Prepisujem",
     classes:
       "border-amber-500/40 bg-amber-500/15 text-amber-700 dark:text-amber-300",
     icon: Loader2,
   },
   transcribed: {
-    label: "Transcribed",
+    label: "Prepísané",
     classes:
-      "border-sky-500/40 bg-sky-500/15 text-sky-700 dark:text-sky-300",
+      "border-[var(--brand-accent)]/40 bg-[var(--brand-accent)]/15 text-[var(--brand-accent)] dark:text-[var(--brand-accent)]",
     icon: Sparkles,
   },
   categorized: {
-    label: "Done",
+    label: "Hotové",
     classes:
-      "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+      "border-[var(--brand-accent)] bg-[var(--brand-accent)]/25 text-[var(--brand-fg)]",
     icon: CheckCircle2,
   },
 };
