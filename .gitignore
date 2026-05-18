@@ -50,3 +50,10 @@ next-env.d.ts
 
 # python venv for faster-whisper (if used locally)
 .venv/
+
+# claude code internal state
+.claude/
+
+# design source drops (zips, mockups) — not shipped with the app
+*.zip
+/design/
