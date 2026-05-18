@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { spawn } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { eq } from "drizzle-orm";
 import { db, schema } from "./db";
@@ -11,6 +12,12 @@ const SCRIPT_PATH = path.resolve(process.cwd(), "scripts/transcribe.py");
 const AUDIO_DIR =
   process.env.AUDIO_DIR ?? path.resolve(process.cwd(), "data/audio");
 const DRY_RUN = process.env.WHISPER_DRY_RUN === "1";
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_MODEL = process.env.GROQ_MODEL ?? "whisper-large-v3";
+
+type Backend = "dry-run" | "groq" | "python";
+
+const BACKEND: Backend = DRY_RUN ? "dry-run" : GROQ_API_KEY ? "groq" : "python";
 
 type TranscriptionResult = {
   text: string;
@@ -21,12 +28,54 @@ function log(...args: unknown[]) {
   console.log(`[worker ${new Date().toISOString()}]`, ...args);
 }
 
+const MIME_FROM_EXT: Record<string, string> = {
+  webm: "audio/webm",
+  ogg: "audio/ogg",
+  m4a: "audio/mp4",
+  mp4: "audio/mp4",
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+};
+
+async function transcribeViaGroq(audioPath: string): Promise<TranscriptionResult> {
+  const ext = path.extname(audioPath).slice(1).toLowerCase();
+  const mime = MIME_FROM_EXT[ext] ?? "application/octet-stream";
+  const buf = await readFile(audioPath);
+  const form = new FormData();
+  form.append("file", new Blob([new Uint8Array(buf)], { type: mime }), path.basename(audioPath));
+  form.append("model", GROQ_MODEL);
+  form.append("response_format", "verbose_json");
+
+  const res = await fetch(
+    "https://api.groq.com/openai/v1/audio/transcriptions",
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${GROQ_API_KEY}` },
+      body: form,
+    },
+  );
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Groq API ${res.status}: ${body.slice(0, 300)}`);
+  }
+  const data = (await res.json()) as { text: string; language?: string };
+  return {
+    text: data.text.trim(),
+    language: data.language ?? "auto",
+  };
+}
+
 async function transcribe(audioPath: string): Promise<TranscriptionResult> {
-  if (DRY_RUN) {
+  if (BACKEND === "dry-run") {
     return {
       text: `[dry-run] mock transcript for ${path.basename(audioPath)}`,
       language: "auto",
     };
+  }
+
+  if (BACKEND === "groq") {
+    return transcribeViaGroq(audioPath);
   }
 
   return new Promise((resolve, reject) => {
@@ -115,7 +164,7 @@ async function processOne(): Promise<boolean> {
 
 async function loop() {
   log(
-    `start (model=${WHISPER_MODEL}, poll=${POLL_MS}ms, dryRun=${DRY_RUN}, audioDir=${AUDIO_DIR})`,
+    `start (backend=${BACKEND}, model=${BACKEND === "groq" ? GROQ_MODEL : WHISPER_MODEL}, poll=${POLL_MS}ms, audioDir=${AUDIO_DIR})`,
   );
   while (true) {
     let didWork = false;

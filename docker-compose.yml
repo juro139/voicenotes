@@ -11,6 +11,8 @@ services:
       AUDIO_DIR: /data/audio
       NEXT_PUBLIC_URL: ${NEXT_PUBLIC_URL:-https://notes.cugovci.uk}
       WHISPER_MODEL: ${WHISPER_MODEL:-medium}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-whisper-large-v3}
       NODE_ENV: production
     ports:
       - "3000:3000"
@@ -36,6 +38,8 @@ services:
       DATABASE_URL: file:/data/voicenotes.db
       AUDIO_DIR: /data/audio
       WHISPER_MODEL: ${WHISPER_MODEL:-medium}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-whisper-large-v3}
       WORKER_POLL_MS: ${WORKER_POLL_MS:-5000}
       NODE_ENV: production
     volumes:

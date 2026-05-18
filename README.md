@@ -19,15 +19,31 @@ npm run db:migrate                 # creates data/voicenotes.db
 npm run dev                        # http://localhost:3000
 ```
 
-In a second terminal, start the worker:
+In a second terminal, start the worker. Pick one backend:
 
 ```bash
-# Dry-run mode (no Python required) — emits placeholder transcripts
-WHISPER_DRY_RUN=1 npm run worker
+# 1) Groq (recommended). Free, hosted Whisper-large-v3, ~4h audio/day quota.
+#    Sign up at https://console.groq.com/keys, paste the key into .env.local
+#    as GROQ_API_KEY=..., then:
+npm run worker
 
-# Real transcription — needs Python 3 + ffmpeg + faster-whisper installed
+# 2) Local faster-whisper (no internet, fully private, slower on CPU).
+#    Needs Python 3 + ffmpeg installed, then:
 pip install faster-whisper
 npm run worker
+
+# 3) Dry-run (no setup, useful for UI work) — emits placeholder transcripts.
+WHISPER_DRY_RUN=1 npm run worker
+```
+
+Priority order if multiple are set: `WHISPER_DRY_RUN` → `GROQ_API_KEY` → Python.
+
+To re-transcribe notes that ran under dry-run (or any stale ones):
+
+```bash
+node scripts/retry-transcription.mjs             # only [dry-run] notes
+node scripts/retry-transcription.mjs --all       # every transcribed note
+node scripts/retry-transcription.mjs <id> [<id>] # specific ids
 ```
 
 The first user to register becomes **admin** automatically. To reset, delete
@@ -65,10 +81,12 @@ See [.env.example](./.env.example). The important ones:
 | `DATABASE_URL`    | `file:./data/voicenotes.db`       | SQLite path. In Docker: `file:/data/voicenotes.db`.                   |
 | `NEXT_PUBLIC_URL` | `http://localhost:3000`           | Public base URL (no trailing slash). Used by auth + PWA manifest.     |
 | `AUDIO_DIR`       | `./data/audio`                    | Where uploaded audio files go.                                        |
-| `WHISPER_MODEL`   | `medium`                          | One of: tiny, base, small, medium, large-v3. CPU → medium recommended.|
+| `GROQ_API_KEY`    | unset                             | If set, worker uses Groq's hosted Whisper-large-v3 (free tier).       |
+| `GROQ_MODEL`      | `whisper-large-v3`                | Groq Whisper model id.                                                |
+| `WHISPER_MODEL`   | `medium`                          | Python fallback only. One of: tiny, base, small, medium, large-v3.    |
 | `WORKER_POLL_MS`  | `5000`                            | How often the worker scans for pending notes.                         |
-| `WHISPER_DRY_RUN` | unset                             | If `1`, worker emits placeholder text instead of running Python.      |
-| `PYTHON_BIN`      | `python`                          | Path to the Python that has faster-whisper. Docker image sets this.   |
+| `WHISPER_DRY_RUN` | unset                             | If `1`, worker emits placeholder text. Overrides Groq + Python.       |
+| `PYTHON_BIN`      | `python`                          | Path to Python with faster-whisper. Docker image sets this.           |
 
 ## Deployment (Coolify on the voicenotes VM)
 
