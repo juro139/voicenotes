@@ -1,4 +1,6 @@
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
+loadEnv({ path: ".env" });
+loadEnv({ path: ".env.local", override: true });
 import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -26,6 +28,21 @@ type TranscriptionResult = {
 
 function log(...args: unknown[]) {
   console.log(`[worker ${new Date().toISOString()}]`, ...args);
+}
+
+const LANG_ALIASES: Record<string, "sk" | "en"> = {
+  sk: "sk",
+  slo: "sk",
+  slovak: "sk",
+  slovenčina: "sk",
+  en: "en",
+  eng: "en",
+  english: "en",
+};
+
+function normalizeLang(raw: string | undefined): "sk" | "en" | null {
+  if (!raw) return null;
+  return LANG_ALIASES[raw.toLowerCase()] ?? null;
 }
 
 const MIME_FROM_EXT: Record<string, string> = {
@@ -137,10 +154,7 @@ async function processOne(): Promise<boolean> {
   const started = Date.now();
   try {
     const result = await transcribe(absPath);
-    const detectedLang =
-      result.language === "sk" || result.language === "en"
-        ? result.language
-        : note.language;
+    const detectedLang = normalizeLang(result.language) ?? note.language;
 
     db.update(schema.voicenote)
       .set({
